@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Crockpot</title>
+<style>
+:root{--bg:#0c0a09;--surface:#1c1917;--surface-2:#292524;--border:#44403c;--fg:#fafaf9;--muted:#a8a29e;--dim:#78716c;--accent:#f97316;--accent-hover:#ea580c;--accent-soft:#431407;--err:#fb7185;--info:#7dd3fc}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}input,textarea,select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+.app{display:flex;height:100dvh}.aside{width:17rem;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.brand{padding:1rem;border-bottom:1px solid var(--border)}.brand h1{margin:0;font-size:1.15rem}.brand h1 span{color:var(--accent)}
+.btn{min-height:2.6rem;padding:0 .8rem;border-radius:8px;font-weight:600}.btn-accent{background:var(--accent);color:#1c1917;width:100%}
+.item{min-height:2.6rem;padding:0 .75rem;border-radius:8px;width:100%;text-align:left;color:var(--muted)}.item.on{background:var(--accent-soft);color:var(--fg)}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;padding:.5rem;border-top:1px solid var(--border)}
+.nav button{min-height:2.8rem;border-radius:8px;color:var(--muted)}.nav button.on{background:var(--accent-soft);color:var(--accent)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}header.top{height:3.4rem;display:flex;align-items:center;justify-content:space-between;padding:0 .9rem;border-bottom:1px solid var(--border)}
+.msgs{flex:1;overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:.8rem}
+.bubble{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem;max-width:40rem;white-space:pre-wrap}
+.user{margin-left:auto;background:var(--accent-soft);border-color:#7c2d12}
+.bar{display:flex;gap:.4rem;padding:.75rem;border-top:1px solid var(--border);background:var(--surface)}
+.bar textarea{flex:1;min-height:2.6rem}
+.hint{color:var(--dim);font-size:.75rem;padding:.5rem .75rem}
+</style></head>
+<body>
+<div class="app">
+<aside class="aside">
+<div class="brand"><h1>Crock<span>pot</span></h1><p class="hint" style="padding:0">Your copy — not inside Grok chat</p></div>
+<div id="bots" style="flex:1;overflow:auto;padding:.4rem"></div>
+<nav class="nav"><button data-p="chat" class="on">Chat</button><button data-p="tasks">Tasks</button></nav>
+</aside>
+<main class="main">
+<header class="top"><h2 id="title">Chat</h2><span id="status" class="hint" style="padding:0">Ready</span></header>
+<div class="msgs" id="msgs"></div>
+<form class="bar" id="form"><textarea id="input" placeholder="Ask CrockBot…"></textarea><button class="btn btn-accent" style="width:auto" type="submit">Send</button></form>
+</main></div>
+<script>
+const bots=[{id:-1,name:"CrockBot"},{id:-2,name:"Code Cook"},{id:-3,name:"Idea Pot"}];
+let active=-1;
+const runs={};
+function sess(id){if(!runs[id])runs[id]=[{role:"bot",text:bots.find(b=>b.id===id).name+" is ready."}];return runs[id];}
+function render(){
+ document.getElementById("bots").innerHTML=bots.map(b=>`<button class="item ${b.id===active?"on":""}" data-id="${b.id}">${b.name}</button>`).join("");
+ document.querySelectorAll("[data-id]").forEach(el=>el.onclick=()=>{active=+el.dataset.id;render()});
+ const msgs=sess(active);
+ document.getElementById("msgs").innerHTML=msgs.map(m=>`<div class="bubble ${m.role==="user"?"user":""}">${m.text.replace(/[&<>]/g,c=>({"&":"&","<":"<",">":">"}[c]))}</div>`).join("");
+ document.getElementById("title").textContent=bots.find(b=>b.id===active).name;
+ document.getElementById("msgs").scrollTop=99999;
+}
+document.getElementById("form").onsubmit=e=>{
+ e.preventDefault();
+ const v=document.getElementById("input").value.trim(); if(!v)return;
+ document.getElementById("input").value="";
+ sess(active).push({role:"user",text:v});
+ let reply="On it. "+v;
+ if(/pi/i.test(v)&&/digit/i.test(v)) reply="The first 10 digits of pi are 3.141592653";
+ sess(active).push({role:"bot",text:reply});
+ render();
+};
+render();
+</script>
+</body></html>
