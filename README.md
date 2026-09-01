@@ -1,14 +1,20 @@
 # Crockpot
 
-Standalone files in this repo:
+Single-file kitchen. The real app file is `crockpot.html`.
 
-- [crockpot.html](https://github.com/leonboudourakis-pixel/crockpot/blob/main/crockpot.html)
-- [index.html](https://github.com/leonboudourakis-pixel/crockpot/blob/main/index.html) (small demo kitchen)
+## Live Grok (same model as Crockpot main)
 
-## Download crockpot.html
+Chat uses xAI model `grok-4-1-fast` — the same model Crockpot main uses.
 
-Direct raw file:
+1. Get a key at https://console.x.ai
+2. Open `crockpot.html` in a browser
+3. Tap the gear in the header
+4. Paste the key
 
-https://raw.githubusercontent.com/leonboudourakis-pixel/crockpot/main/crockpot.html
+The key stays in this browser only.
 
-Right-click that link, Save As, name it `crockpot.html`, then open it.
+## Download
+
+Repo page: https://github.com/leonboudourakis-pixel/crockpot/blob/main/crockpot.html
+
+Click **Raw**, then Save As `crockpot.html`.
