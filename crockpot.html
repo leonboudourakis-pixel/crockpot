@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crockpot</title>
+<style>
+  html,body{margin:0;height:100%;background:#0c0a09;color:#f5f0eb;font-family:system-ui,sans-serif}
+  .boot{display:grid;place-items:center;height:100%;text-align:center;padding:24px}
+  p{color:#b3aaa3}
+  button{min-height:44px;padding:0 18px;border:0;border-radius:10px;background:#f97316;color:#1a0c06;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="boot" id="boot">
+  <div>
+    <h1 style="margin:0 0 8px">Crockpot</h1>
+    <p id="status">Open this file from GitHub Raw, then click Save.</p>
+    <p><button type="button" id="save">Save crockpot.html</button></p>
+    <p style="font-size:13px">If Save does nothing, use the repo file named <code>kitchen.html</code> after it is published.</p>
+  </div>
+</div>
+<script>
+document.getElementById("save").onclick = () => {
+  location.href = "https://raw.githubusercontent.com/leonboudourakis-pixel/crockpot/main/kitchen.html";
+};
+</script>
+</body>
+</html>
