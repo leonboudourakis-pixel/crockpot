@@ -1,12 +1,14 @@
 # Crockpot
 
-Standalone kitchen file lives at `crockpot.html`.
+Standalone files in this repo:
 
-## Download
+- [crockpot.html](https://github.com/leonboudourakis-pixel/crockpot/blob/main/crockpot.html)
+- [index.html](https://github.com/leonboudourakis-pixel/crockpot/blob/main/index.html) (small demo kitchen)
 
-1. Open [crockpot.html](https://github.com/leonboudourakis-pixel/crockpot/blob/main/crockpot.html)
-2. Click the raw button, or use this direct file:
-   https://raw.githubusercontent.com/leonboudourakis-pixel/crockpot/main/crockpot.html
-3. Save the page as `crockpot.html` and double-click it.
+## Download crockpot.html
 
-Grok chat cannot attach a download card in that thread. Use this repo instead.
+Direct raw file:
+
+https://raw.githubusercontent.com/leonboudourakis-pixel/crockpot/main/crockpot.html
+
+Right-click that link, Save As, name it `crockpot.html`, then open it.
