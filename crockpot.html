@@ -7,23 +7,18 @@
 <style>
   html,body{margin:0;height:100%;background:#0c0a09;color:#f5f0eb;font-family:system-ui,sans-serif}
   .boot{display:grid;place-items:center;height:100%;text-align:center;padding:24px}
-  p{color:#b3aaa3}
-  button{min-height:44px;padding:0 18px;border:0;border-radius:10px;background:#f97316;color:#1a0c06;font-weight:700;cursor:pointer}
+  p{color:#b3aaa3;max-width:28rem;margin:0 auto 14px;line-height:1.45}
+  a{min-height:44px;padding:12px 18px;border-radius:10px;background:#f97316;color:#1a0c06;font-weight:700;text-decoration:none;display:inline-block}
 </style>
 </head>
 <body>
-<div class="boot" id="boot">
+<div class="boot">
   <div>
-    <h1 style="margin:0 0 8px">Crockpot</h1>
-    <p id="status">Open this file from GitHub Raw, then click Save.</p>
-    <p><button type="button" id="save">Save crockpot.html</button></p>
-    <p style="font-size:13px">If Save does nothing, use the repo file named <code>kitchen.html</code> after it is published.</p>
+    <h1 style="margin:0 0 12px">Crockpot</h1>
+    <p>Use the working demo kitchen below. Right-click the orange button and choose Save Link As, then name it crockpot.html.</p>
+    <p><a href="https://raw.githubusercontent.com/leonboudourakis-pixel/crockpot/main/index.html">Save the kitchen file</a></p>
+    <p>Repo page: <a href="https://github.com/leonboudourakis-pixel/crockpot" style="background:#1c1917;color:#f97316">github.com/leonboudourakis-pixel/crockpot</a></p>
   </div>
 </div>
-<script>
-document.getElementById("save").onclick = () => {
-  location.href = "https://raw.githubusercontent.com/leonboudourakis-pixel/crockpot/main/kitchen.html";
-};
-</script>
 </body>
 </html>
