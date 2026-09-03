@@ -1,20 +1,11 @@
 # Crockpot
 
-Single-file kitchen. The real app file is `crockpot.html`.
-
-## Live Grok (same model as Crockpot main)
-
-Chat uses xAI model `grok-4-1-fast` — the same model Crockpot main uses.
-
-1. Get a key at https://console.x.ai
-2. Open `crockpot.html` in a browser
-3. Tap the gear in the header
-4. Paste the key
-
-The key stays in this browser only.
+A local conversational engine in one HTML file. No cloud. No Grok. Open the file in any browser.
 
 ## Download
 
-Repo page: https://github.com/leonboudourakis-pixel/crockpot/blob/main/crockpot.html
+Save this file, then double-click it:
 
-Click **Raw**, then Save As `crockpot.html`.
+**[Download crockpot.html](https://github.com/leonboudourakis-pixel/crockpot/releases/latest/download/crockpot.html)**
+
+Or open the latest release: https://github.com/leonboudourakis-pixel/crockpot/releases/latest

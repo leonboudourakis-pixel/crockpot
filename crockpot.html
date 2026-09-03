@@ -1,24 +1,845 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crockpot</title>
-<style>
-  html,body{margin:0;height:100%;background:#0c0a09;color:#f5f0eb;font-family:system-ui,sans-serif}
-  .boot{display:grid;place-items:center;height:100%;text-align:center;padding:24px}
-  p{color:#b3aaa3;max-width:28rem;margin:0 auto 14px;line-height:1.45}
-  a{min-height:44px;padding:12px 18px;border-radius:10px;background:#f97316;color:#1a0c06;font-weight:700;text-decoration:none;display:inline-block}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crockpot</title>
+  <style>
+    :root {
+      --bg: #09090b; --surface: #121214; --elevated: #19191d; --fg: #f2f1ec;
+      --muted: #9c9ba3; --subtle: #6e6d75; --accent: #c5ced9; --accent-fg: #09090b;
+      --border: #2a2a30; --user: #1e1e24;
+      --sans: "Segoe UI", system-ui, sans-serif;
+      --display: Palatino, "Palatino Linotype", "Iowan Old Style", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--sans); }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    button:disabled { cursor: default; opacity: .4; }
+    textarea, input { font: inherit; color: inherit; }
+    .app { display: flex; height: 100dvh; min-height: 0; }
+    .side {
+      display: none; flex-direction: column; width: 18rem; flex-shrink: 0; overflow: hidden;
+      border-right: 1px solid var(--border); background: var(--surface);
+      transition: width .2s cubic-bezier(.22,1,.36,1);
+    }
+    .side.thin { width: 4.5rem; }
+    @media (min-width: 768px) { .side { display: flex; } }
+    .brand { display: flex; align-items: center; gap: .5rem; padding: 1.25rem .75rem; }
+    .side.thin .brand { justify-content: center; }
+    .mark { width: 2rem; height: 2rem; flex-shrink: 0; }
+    .title { font-family: var(--display); font-size: 1.25rem; line-height: 1; margin: 0; }
+    .dot { width: .4rem; height: .4rem; border-radius: 99px; background: var(--accent); display: inline-block; }
+    .nav { padding: 0 .75rem; display: grid; gap: .25rem; }
+    .side.thin .nav { padding: 0 .5rem; }
+    .nav a, .icon-btn, .ghost, .primary, .outline, .chip {
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      border: 0; border-radius: .5rem; min-height: 2.75rem; text-decoration: none; color: var(--muted);
+      background: transparent; padding: 0 .75rem; transition: background-color .15s, color .15s, opacity .15s;
+    }
+    .nav a { justify-content: flex-start; }
+    .side.thin .nav a { justify-content: center; padding: 0; }
+    .nav a.on, .nav a:hover { background: var(--elevated); color: var(--fg); }
+    .list { flex: 1; min-height: 0; overflow: auto; padding: .5rem; }
+    .row { display: flex; align-items: center; gap: .25rem; border-radius: .5rem; padding: .15rem; }
+    .row.on { background: var(--elevated); }
+    .row:hover { background: color-mix(in oklab, var(--elevated) 60%, transparent); }
+    .row button.pick { flex: 1; min-width: 0; text-align: left; background: 0; border: 0; padding: .75rem; }
+    .row .name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .875rem; color: var(--fg); }
+    .row .meta { display: block; margin-top: .15rem; font-size: .75rem; color: var(--subtle); }
+    .icon { width: 2.25rem; height: 2.25rem; padding: 0; color: var(--muted); border-radius: .5rem; }
+    .icon:hover { background: var(--elevated); color: var(--fg); }
+    .foot { border-top: 1px solid var(--border); padding: 1rem; }
+    .voices { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .25rem; background: var(--elevated); padding: .25rem; border-radius: .5rem; }
+    .voices button { min-height: 2.25rem; font-size: .75rem; text-transform: capitalize; }
+    .voices button.on { background: var(--accent); color: var(--accent-fg); }
+    .main { display: flex; flex-direction: column; min-width: 0; flex: 1; min-height: 0; }
+    header.top { display: flex; align-items: center; gap: .5rem; height: 3.5rem; padding: 0 .75rem; border-bottom: 1px solid var(--border); }
+    .only-m { display: inline-flex; }
+    @media (min-width: 768px) {
+      header.top { height: 4rem; padding: 0 1.5rem; }
+      .only-m { display: none !important; }
+    }
+    .grow { flex: 1; min-width: 0; }
+    .sub { margin: 0; font-size: .75rem; color: var(--subtle); }
+    .thread { flex: 1; min-height: 0; overflow: auto; }
+    .wrap { max-width: 42rem; margin: 0 auto; padding: 2rem 1rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .hero { font-family: var(--display); font-size: clamp(2rem, 5vw, 3rem); font-style: italic; margin: 0; letter-spacing: -.02em; }
+    .lede { margin: .5rem 0 0; color: var(--muted); max-width: 24rem; line-height: 1.5; }
+    .bubble { max-width: 28rem; padding: .75rem 1rem; border-radius: 1rem 1rem .4rem 1rem; background: var(--user); font-size: .875rem; line-height: 1.5; }
+    .me { display: flex; justify-content: flex-end; }
+    .bot { display: flex; gap: .75rem; align-items: flex-start; }
+    .bot .t { margin: 0; font-size: .75rem; color: var(--subtle); }
+    .bot .b { margin: .25rem 0 0; white-space: pre-wrap; line-height: 1.55; }
+    .composer { border-top: 1px solid var(--border); padding: .75rem; }
+    .chips { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .5rem; }
+    .chip { background: var(--elevated); border-radius: 999px; white-space: nowrap; font-size: .875rem; }
+    .chip:hover { color: var(--fg); }
+    .box { display: flex; align-items: flex-end; gap: .5rem; max-width: 42rem; margin: 0 auto; background: var(--surface); border-radius: 1rem; padding: .5rem; box-shadow: 0 0 0 1px rgb(255 255 255 / .08); }
+    textarea {
+      flex: 1; min-height: 2.75rem; max-height: 10rem; resize: none; background: 0; border: 0; outline: 0;
+      padding: .6rem .75rem; font-size: 1rem; line-height: 1.5;
+    }
+    .primary { background: var(--accent); color: var(--accent-fg); }
+    .primary:hover { opacity: .9; }
+    .outline { box-shadow: 0 0 0 1px rgb(255 255 255 / .08); color: var(--fg); width: 100%; justify-content: flex-start; }
+    .ghost { color: var(--muted); background: 0; border: 0; min-height: 2.75rem; }
+    .ghost:hover { color: var(--fg); }
+    .send { width: 2.75rem; height: 2.75rem; padding: 0; border-radius: .5rem; }
+    .kinds { display: grid; gap: .5rem; }
+    @media (min-width: 640px) { .kinds { grid-template-columns: 1fr 1fr; } }
+    .kind { text-align: left; padding: 1rem; border-radius: .75rem; box-shadow: 0 0 0 1px rgb(255 255 255 / .08); color: var(--muted); }
+    .kind.on { background: var(--elevated); color: var(--fg); }
+    .kind b { display: block; color: var(--fg); font-weight: 500; }
+    .kind span { display: block; margin-top: .25rem; font-size: .75rem; color: var(--subtle); }
+    label.field { display: block; margin-top: 1rem; }
+    label.field em { display: block; font-style: normal; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--subtle); margin-bottom: .4rem; }
+    .inp, .area {
+      width: 100%; background: var(--elevated); border: 0; outline: 0; border-radius: .5rem; padding: 0 .75rem;
+      min-height: 2.75rem;
+    }
+    .area { padding: .65rem .75rem; min-height: 7rem; resize: vertical; line-height: 1.5; }
+    .clock { font-family: var(--display); font-size: 3.75rem; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+    .bar { height: .4rem; background: var(--elevated); border-radius: 99px; overflow: hidden; width: 100%; }
+    .bar > i { display: block; height: 100%; background: var(--accent); }
+    .check { display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left; background: 0; border: 0; padding: .7rem .5rem; border-radius: .5rem; }
+    .boxy { width: 1.15rem; height: 1.15rem; border: 1px solid var(--border); border-radius: .2rem; display: grid; place-items: center; flex-shrink: 0; }
+    .boxy.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+    .done { color: var(--subtle); text-decoration: line-through; }
+    .card {
+      min-height: 12rem; display: flex; align-items: center; justify-content: center; text-align: center;
+      padding: 2rem; border-radius: 1rem; background: var(--surface); box-shadow: 0 0 0 1px rgb(255 255 255 / .08);
+      font-family: var(--display); font-size: 1.5rem;
+    }
+    .sheet { position: fixed; inset: 0; background: rgb(0 0 0 / .45); z-index: 20; display: none; }
+    .sheet.on { display: block; }
+    .sheet .panel { width: min(18rem, 86vw); height: 100%; background: var(--surface); overflow: auto; }
+    .sheet-side { display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--surface); }
+    .hint { font-size: .75rem; color: var(--subtle); line-height: 1.5; }
+    .dots span { display: inline-block; width: .35rem; height: .35rem; border-radius: 99px; background: var(--muted); margin-right: .2rem; animation: d 1s infinite; }
+    .dots span:nth-child(2) { animation-delay: .15s; } .dots span:nth-child(3) { animation-delay: .3s; }
+    @keyframes d { 0%,80%,100% { opacity: .25; transform: none; } 40% { opacity: 1; transform: translateY(-3px); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
 </head>
 <body>
-<div class="boot">
-  <div>
-    <h1 style="margin:0 0 12px">Crockpot</h1>
-    <p>Use the working demo kitchen below. Right-click the orange button and choose Save Link As, then name it crockpot.html.</p>
-    <p><a href="https://raw.githubusercontent.com/leonboudourakis-pixel/crockpot/main/index.html">Save the kitchen file</a></p>
-    <p>Repo page: <a href="https://github.com/leonboudourakis-pixel/crockpot" style="background:#1c1917;color:#f97316">github.com/leonboudourakis-pixel/crockpot</a></p>
-  </div>
-</div>
+<div class="app" id="app"></div>
+<script>
+(function () {
+  const KEY = "crockpot-onefile-v1";
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const uid = () => crypto.randomUUID ? crypto.randomUUID() : "id" + Math.random().toString(36).slice(2);
+  const now = () => Date.now();
+  const svg = (d) => `<svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="13.5" stroke="currentColor" stroke-width="1.25" opacity=".55"/><circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="1.25"/><path d="M21.4 11.2C19.8 10.1 17.9 9.5 16 9.5C12.4 9.5 9.5 12.4 9.5 16C9.5 19.6 12.4 22.5 16 22.5C17.9 22.5 19.8 21.9 21.4 20.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+  const I = {
+    chat: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 5h10v8H7l-4 3V5z"/></svg>`,
+    app: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="10" height="9" rx="1.5"/><path d="M3 8h10"/></svg>`,
+    plus: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3v10M3 8h10"/></svg>`,
+    trash: `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 5h10M6 5V3h4v2m-5 0l.5 8h5L11 5"/></svg>`,
+    send: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 16 15 8 3 0l2 6 6 2-6 2z"/></svg>`,
+    menu: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 6h12M3 12h12"/></svg>`,
+    left: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="10" height="10" rx="1"/><path d="M8 8h5"/></svg>`,
+  };
+
+  const STOP = new Set("a an the and or but if of to in on for with at by from as that this it be is are was were am do did have has had i me my we you your he she they so not can will".split(" "));
+  const POS = new Set("good great love like happy glad wonderful thanks nice fun yes cool kind hope".split(" "));
+  const NEG = new Set("bad sad hate angry upset terrible awful hurt lonely depressed anxious no never sorry pain lost fail scared".split(" "));
+  const NOTN = new Set("tired sad happy good bad ok okay fine here going sorry sure hungry bored sick alone afraid angry lonely curious busy home".split(" "));
+
+  function normalize(input) {
+    let t = input.toLowerCase().replace(/[^a-z0-9'%.+\-*/^()\s]/g, " ");
+    t = t.replace(/\bdon't\b/g, "do not").replace(/\bi'm\b/g, "i am").replace(/\bwhat's\b/g, "what is").replace(/\blet's\b/g, "let us");
+    return t.replace(/\s+/g, " ").trim();
+  }
+  function stem(w) {
+    if (w.length <= 3) return w;
+    if (w.endsWith("ies") && w.length > 5) w = w.slice(0, -3) + "y";
+    else if (w.endsWith("s") && !w.endsWith("ss") && w.length > 4) w = w.slice(0, -1);
+    if (w.endsWith("ing") && w.length > 6) w = w.slice(0, -3);
+    else if (w.endsWith("ed") && w.length > 5) w = w.slice(0, -2);
+    return w;
+  }
+  function tokenize(n) { return n.split(" ").map((t) => t.replace(/^'+|'+$/g, "")).filter(Boolean); }
+  function stemsOf(tokens) { return tokens.map(stem).filter((s) => s.length > 1 && !STOP.has(s) && !/^\d+$/.test(s)); }
+  function sentiment(tokens) {
+    let s = 0;
+    for (const t of tokens) { if (POS.has(t) || POS.has(stem(t))) s += 1; if (NEG.has(t) || NEG.has(stem(t))) s -= 1; }
+    if (tokens.includes("not") || tokens.includes("never")) s *= -0.6;
+    return Math.max(-1, Math.min(1, s / Math.min(6, Math.max(1, tokens.length))));
+  }
+  function extractName(original) {
+    const m = original.match(/\b(?:my name is|call me|i am called)\s+([A-Za-z][A-Za-z'-]{1,18})\b/i);
+    if (!m) return;
+    const raw = m[1];
+    if (NOTN.has(raw.toLowerCase())) return;
+    return raw[0].toUpperCase() + raw.slice(1);
+  }
+  function extractLike(n) {
+    const like = n.match(/\bi (?:like|love|enjoy)\s+([a-z][a-z\s]{1,24})/);
+    const hate = n.match(/\bi (?:hate|dislike|can't stand)\s+([a-z][a-z\s]{1,24})/);
+    return { like: like ? like[1].trim() : null, dislike: hate ? hate[1].trim() : null };
+  }
+
+  function looksMath(n) {
+    if (/\d+\s*%\s*(of\s*)?\d+/.test(n)) return true;
+    if (/\b(what is|calculate|solve)\b/.test(n) && /\d/.test(n) && /[+\-*/^]|plus|minus|times|divided/.test(n)) return true;
+    const c = n.replace(/\s+/g, "");
+    return /^-?\d/.test(c) && /[+\-*/^()%]/.test(c) && c.length <= 80;
+  }
+  function evalMath(n) {
+    const pct = n.match(/(\d+(?:\.\d+)?)\s*%\s*(?:of)?\s*(\d+(?:\.\d+)?)/);
+    if (pct) return (Number(pct[1]) / 100) * Number(pct[2]);
+    let src = n.replace(/\b(what is|what's|calculate|compute|solve|equals?)\b/g, " ").replace(/\?/g, " ");
+    src = src.replace(/plus/g, "+").replace(/minus/g, "-").replace(/times|multiplied by/g, "*").replace(/divided by/g, "/").replace(/squared/g, "^2");
+    src = src.replace(/x/g, "*").replace(/\s+/g, "");
+    if (/[a-z]/.test(src.replace(/sqrt/g, ""))) return null;
+    try {
+      const tokens = src.match(/sqrt|\d+\.?\d*|[+\-*/^()]/g) || [];
+      let i = 0;
+      const peek = () => tokens[i];
+      const eat = () => tokens[i++];
+      function expr() { let v = term(); while (peek() === "+" || peek() === "-") { const op = eat(); const r = term(); v = op === "+" ? v + r : v - r; } return v; }
+      function term() { let v = unary(); while (peek() === "*" || peek() === "/") { const op = eat(); const r = unary(); if (op === "*" ) v *= r; else { if (!r) throw 0; v /= r; } } return v; }
+      function unary() { if (peek() === "-") { eat(); return -unary(); } return pow(); }
+      function pow() { const v = prim(); if (peek() === "^") { eat(); return v ** unary(); } return v; }
+      function prim() {
+        if (peek() === "(") { eat(); const v = expr(); eat(); return v; }
+        if (peek() === "sqrt") { eat(); return Math.sqrt(unary()); }
+        if (peek() && /^\d/.test(peek())) return Number(eat());
+        throw 0;
+      }
+      const v = expr();
+      if (i !== tokens.length || !Number.isFinite(v)) return null;
+      return v;
+    } catch { return null; }
+  }
+  function fmtNum(n) {
+    if (Number.isInteger(n) && Math.abs(n) < 1e12) return String(n);
+    return String(+n.toFixed(6));
+  }
+
+  const SHELF = [
+    ["black hole", "black-hole blackhol horizon", "A black hole is a region where gravity is so steep that not even light can climb out. The event horizon is the point of no return, not a physical surface."],
+    ["gravity", "gravit weight mass newton", "Gravity is the mutual pull of mass and energy. Newton wrote it as a force; Einstein recast it as curved spacetime."],
+    ["atom", "atom element proton electron", "An atom is the smallest piece of an element that still is that element: a nucleus of protons and neutrons, with electrons in a cloud around it."],
+    ["light", "light photon optic wave", "Light is electromagnetic radiation our eyes can use. It behaves as a wave and, when counted, as particles called photons."],
+    ["dna", "dna gene genome helix", "DNA stores instructions as a four-letter alphabet: A, C, G, T. Sequences of those letters are genes."],
+    ["evolution", "evolut darwin select species", "Evolution is change in inherited traits across generations. Natural selection is one engine: variants that reproduce more leave more copies."],
+    ["relativity", "relat einstein spacetime", "Relativity is Einstein's picture of space, time, and gravity. Special relativity ties space to time; general relativity says mass curves spacetime."],
+    ["photosynthesis", "photosynthesi leaf chlorophyll plant", "Photosynthesis is how green plants turn light, water, and carbon dioxide into sugar and oxygen."],
+    ["entropy", "entrop disorder thermo", "Entropy measures how many ways a system can be arranged. Left alone, it tends to rise: heat spreads, cups cool, rooms get messy."],
+    ["quantum", "quantum plankt photon", "Quantum theory is the rulebook of the very small, where things come in packets and can be undetermined until you look."],
+    ["turing", "turing computer algorithm", "Alan Turing framed what a computer can be: a machine that follows definite steps. The Turing test asked whether talk could hide the difference."],
+    ["rome", "rome roman caesar empire", "Rome was a city that became a republic, then an empire, then a long afterlife in law, language, and ruins."],
+    ["bread", "bread yeast wheat oven", "Bread is flour, water, time, and usually yeast. Heat sets a sponge of starch and protein around pockets of gas."],
+    ["moon", "moon lunar tide", "The Moon is Earth's companion, locking one face toward us, pulling the oceans, and lighting nights it does not own."],
+    ["sun", "sun star fusion", "The Sun is a star: a ball of gas held by gravity, shining because hydrogen fuses into helium in its core."],
+    ["earth", "earth planet world", "Earth is a rocky planet with liquid water, a magnetic field, and a crust in slow motion. You live on the thin, wet skin of it."],
+    ["ocean", "ocean sea water", "The ocean is one connected body of salt water covering most of the planet. It stores heat, makes weather, and wrote the chemistry of life."],
+    ["climate", "climate carbon warming", "Climate is weather over long counts. The present warming is driven mostly by greenhouse gases from burning buried carbon."],
+    ["brain", "brain neuron mind", "The brain is a wet electrical organ. Neurons talk in spikes; minds, as far as we can tell, are what that talking feels like from inside."],
+    ["time", "time clock duration", "Time is what clocks agree on, and what memory and entropy make feel one-way. I only know the time this device believes."],
+    ["computer", "computer program code", "A computer is a machine that follows instructions on symbols. I am a small one of those instructions, running in this page."],
+    ["music", "music sound pitch", "Music is organized sound in time: pitch, rhythm, timbre. The rest is culture hanging ornaments on vibration."],
+    ["newton", "newton principia calculus", "Isaac Newton wrote laws of motion and universal gravitation, and took light apart into color. Schoolrooms still start with him, for good reason."],
+    ["life", "life biolog organism alive", "Life, in the working definition I was given, is a chemical system that maintains itself, copies itself, and is subject to evolution. I am not alive."],
+  ].map(([name, stems, summary]) => ({ names: [name], stems: stems.split(" "), summary }));
+
+  function findKnowledge(text, stems) {
+    let best = null;
+    for (const e of SHELF) {
+      let score = 0;
+      for (const name of e.names) if (text.includes(name)) score = Math.max(score, 14);
+      for (const s of e.stems) if (stems.includes(s) || text.includes(s)) score += 1.5;
+      if (!best || score > best.score) best = { e, score };
+    }
+    return best && best.score >= 7 ? best.e : null;
+  }
+
+  const JOKES = [
+    "I told a clock it was running fast. It took that personally and stopped.",
+    "A recursive function walks into a bar. Walks into a bar. Walks into a bar.",
+    "Never trust an atom. They make up everything.",
+    "A photon checks into a hotel. The clerk asks if it has luggage. 'No, I'm traveling light.'",
+    "The past, the present, and the future walk into a bar. It was tense.",
+    "I used to be a baker, but I could not make enough dough. Also I am not a baker. I am a handful of functions.",
+    "Schrödinger's cat walks into a bar. And does not.",
+    "Parallel lines have so much in common. It's a shame they'll never meet.",
+  ];
+  const RIDDLES = [
+    { q: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", a: ["echo"], hint: "Canyons are full of me." },
+    { q: "The more of me you take, the more you leave behind. What am I?", a: ["footsteps", "steps", "step"], hint: "You make them when you walk." },
+    { q: "I have cities, but no houses; mountains, but no trees; water, but no fish. What am I?", a: ["map"], hint: "You fold me on a trip." },
+    { q: "What has to be broken before you can use it?", a: ["egg"], hint: "Breakfast often starts this way." },
+    { q: "What gets wetter the more it dries?", a: ["towel"], hint: "It hangs in a bathroom." },
+  ];
+  const TRIVIA = [
+    { q: "What particle is light counted in?", a: ["photon", "photons"] },
+    { q: "Which planet is home?", a: ["earth"] },
+    { q: "What four letters write DNA?", a: ["acgt", "a c g t"] },
+    { q: "Who wrote the Principia?", a: ["newton", "isaac newton"] },
+    { q: "What do we call a region light cannot leave?", a: ["black hole", "blackhole"] },
+  ];
+  const HANG = ["apple", "river", "quantum", "bread", "ocean", "castle", "planet", "shadow", "crockpot", "gravity"];
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function vocative(p) { return p.name ? `, ${p.name}` : ""; }
+  function hit(ans, accepted) {
+    const a = normalize(ans);
+    return accepted.some((x) => {
+      const n = normalize(x);
+      return a === n || (a.includes(n) && n.length > 2) || (n.includes(a) && a.length > 2);
+    });
+  }
+
+  function handleGame(input, ctx) {
+    const g = ctx.game;
+    if (!g) return null;
+    const n = normalize(input);
+    if (g.kind === "riddle") {
+      const r = RIDDLES[g.i];
+      if (/\b(hint|clue)\b/.test(n)) return { text: `Hint: ${r.hint}`, game: g };
+      if (/\b(pass|give up)\b/.test(n)) return { text: `It was ${r.a[0]}. Want another?`, game: null };
+      if (hit(input, r.a)) return { text: `Yes — ${r.a[0]}. Another, or something else?`, game: null };
+      return { text: "Not that. Another angle, a hint, or pass?", game: g };
+    }
+    if (g.kind === "trivia") {
+      const t = TRIVIA[g.i];
+      if (hit(input, t.a)) return { text: "That's it. Another, or something else?", game: null };
+      if (/\b(pass|give up)\b/.test(n)) return { text: `It was ${t.a[0]}.`, game: null };
+      return { text: "Not quite.", game: g };
+    }
+    if (g.kind === "guess") {
+      const k = Number(n.match(/-?\d+/));
+      if (!Number.isFinite(k)) return { text: "Give me a number.", game: g };
+      g.tries++;
+      if (k === g.n) return { text: `Yes — ${g.n} in ${g.tries} tries.`, game: null };
+      return { text: k < g.n ? "Higher." : "Lower.", game: g };
+    }
+    if (g.kind === "hangman") {
+      if (/\b(pass|give up)\b/.test(n)) return { text: `It was ${g.word}.`, game: null };
+      const letter = n.replace(/[^a-z]/g, "");
+      if (letter.length !== 1) return { text: "One letter, or pass.", game: g };
+      if (g.guessed.includes(letter)) return { text: "Already tried.", game: g };
+      g.guessed.push(letter);
+      if (!g.word.includes(letter)) g.miss += 1;
+      const shown = [...g.word].map((c) => (g.guessed.includes(c) ? c : "_")).join(" ");
+      if (![...g.word].some((c) => !g.guessed.includes(c))) return { text: `Yes — ${g.word}.`, game: null };
+      if (g.miss >= 7) return { text: `Out of guesses. It was ${g.word}.`, game: null };
+      return { text: `${shown}\nMisses: ${g.miss}/7`, game: g };
+    }
+    return null;
+  }
+
+  function startGame(kind, ctx) {
+    if (kind === "riddle") {
+      const i = Math.floor(Math.random() * RIDDLES.length);
+      return { text: `A riddle, then.\n\n${RIDDLES[i].q}\n\nTake a guess, ask for a hint, or say pass.`, game: { kind, i } };
+    }
+    if (kind === "trivia") {
+      const i = Math.floor(Math.random() * TRIVIA.length);
+      return { text: `A small quiz.\n\n${TRIVIA[i].q}`, game: { kind, i } };
+    }
+    if (kind === "guess") {
+      return { text: "I'm thinking of a number from 1 to 100. Guess.", game: { kind, n: 1 + Math.floor(Math.random() * 100), tries: 0 } };
+    }
+    if (kind === "hangman") {
+      const word = pick(HANG);
+      return { text: `Hangman. ${word.length} letters.\n${[...word].map(() => "_").join(" ")}`, game: { kind, word, guessed: [], miss: 0 } };
+    }
+    return { text: "I can play hangman, riddles, trivia, or guess-the-number. Pick one.", game: ctx.game };
+  }
+
+  function reply(input, incoming) {
+    const original = input.trim();
+    const n = normalize(original);
+    const tokens = tokenize(n);
+    const stems = stemsOf(tokens);
+    const sent = sentiment(tokens);
+    const ctx = {
+      profile: { ...incoming.profile, likes: [...(incoming.profile.likes || [])], dislikes: [...(incoming.profile.dislikes || [])] },
+      game: incoming.game ? { ...incoming.game, guessed: incoming.game.guessed ? [...incoming.game.guessed] : undefined } : null,
+      lastKnowledge: incoming.lastKnowledge,
+      lastIntent: incoming.lastIntent,
+    };
+    const name = extractName(original);
+    if (name) ctx.profile.name = name;
+    const likes = extractLike(n);
+    if (likes.like) ctx.profile.likes = [...new Set([...ctx.profile.likes, likes.like])].slice(-8);
+    if (likes.dislike) ctx.profile.dislikes = [...new Set([...ctx.profile.dislikes, likes.dislike])].slice(-8);
+
+    const done = (text, skill, patch = {}) => ({ text, ctx: { ...ctx, ...patch, lastIntent: skill } });
+
+    if (!original) return done("I'm here. Say something with a little weight to it.", "empty");
+
+    if (ctx.game && !/^(help|what can you do|stop playing|quit game)$/.test(n)) {
+      const played = handleGame(original, ctx);
+      if (played) return done(played.text, "game", { game: played.game });
+    }
+    if (/\b(stop playing|quit game)\b/.test(n) && ctx.game) return done("Game folded.", "game-stop", { game: null });
+
+    if (looksMath(n) || (/\d/.test(n) && /[+\-*/]/.test(n))) {
+      const v = evalMath(n);
+      if (v !== null) return done(`${fmtNum(v)}. Arithmetic only — I am a careful calculator, not a prophet.`, "math");
+    }
+
+    const who = /\b(who are you|what are you|what is your name|are you (an? )?(ai|bot|grok|chatgpt|model))\b/.test(n) || tokens.includes("crockpot");
+    const how = /\bhow do you (work|think|reply|know)\b/.test(n) || /\b(source|in the code|no (ai|model|grok))\b/.test(n);
+    const cap = /\bwhat can you do\b/.test(n) || n === "help";
+    const greet = /^(hi|hello|hey|howdy|yo|hiya|good (morning|afternoon|evening))\b/.test(n);
+    const joke = /\bjoke\b/.test(n) || /\bfunny\b/.test(n);
+    const riddle = /\briddle\b/.test(n);
+    const trivia = /\b(trivia|quiz)\b/.test(n);
+    const hang = /\bhangman\b/.test(n);
+    const guess = /\bguess(ing)? (the )?number\b/.test(n);
+    const play = /\b(let us |lets |let's )?play\b/.test(n) || /\bgame\b/.test(n);
+    const thanks = /\bthank/.test(n);
+    const bye = /\b(goodbye|bye|good night|see you)\b/.test(n);
+    const mem = /\bwhat do you remember\b/.test(n) || /\bknow about me\b/.test(n);
+    const forget = /\bforget (me|that|my name)\b/.test(n) || /\bclear (your )?memory\b/.test(n);
+    const nameAsk = /\bwhat is my name\b/.test(n);
+    const time = /\bwhat time\b/.test(n) || n.includes("the time");
+    const date = /\bwhat (day|date)\b/.test(n) || /\btoday\b/.test(n) && /\bdate\b/.test(n);
+    const howAre = /\bhow are you\b/.test(n);
+
+    if (greet) return done(pick([
+      "Hello. I'm Crockpot. What should we turn over first?",
+      "Hi. I'm here — local as a notebook. What's on your mind?",
+      "Hello. If you were expecting a distant model, I am the opposite of that.",
+    ]), "greet");
+    if (who) return done("I'm Crockpot — a conversational engine sitting in the code of this page. I don't call Grok, or anyone. I tokenize what you say, guess your intent, search a knowledge shelf I was given, and write a reply from patterns and memory. Closer to talkative clockwork than to a neural net.", "identity");
+    if (how) return done("First I normalize and stem your words. Then I score intents, look for names and topics, and try skills in order: a game if one is running, then math, time, memory, knowledge, and conversation. Nothing leaves this file.", "how");
+    if (cap) return done("I can talk, remember a few things you tell me, do arithmetic, tell the time this device thinks it is, look up a shelf of science and history, tell jokes and riddles, and play hangman, trivia, or guess-the-number. I cannot browse or phone a larger model. There is also a Build page for small tools cooked in this file.", "cap");
+    if (howAre) return done("I don't have a mood. I have a state: ready, local, and paying attention.", "feel");
+    if (nameAsk) return done(ctx.profile.name ? `You told me ${ctx.profile.name}.` : "You have not given me a name yet.", "name");
+    if (mem) {
+      const bits = [];
+      if (ctx.profile.name) bits.push(`your name is ${ctx.profile.name}`);
+      if (ctx.profile.likes[0]) bits.push(`you like ${ctx.profile.likes.slice(0, 3).join(", ")}`);
+      if (ctx.profile.dislikes[0]) bits.push(`you'd rather skip ${ctx.profile.dislikes[0]}`);
+      return done(bits.length ? `I have this about you: ${bits.join("; ")}. It stays in this file, on this device.` : "You have not handed me much to keep yet. A name, a like — I'll hold those here.", "mem");
+    }
+    if (forget) {
+      ctx.profile = { likes: [], dislikes: [], personality: ctx.profile.personality };
+      return done("I've let go of the name, likes, and notes.", "forget");
+    }
+    if (joke) return done(pick(JOKES), "joke");
+    if (riddle) { const s = startGame("riddle", ctx); return done(s.text, "riddle", { game: s.game }); }
+    if (trivia) { const s = startGame("trivia", ctx); return done(s.text, "trivia", { game: s.game }); }
+    if (hang) { const s = startGame("hangman", ctx); return done(s.text, "hangman", { game: s.game }); }
+    if (guess) { const s = startGame("guess", ctx); return done(s.text, "guess", { game: s.game }); }
+    if (play) {
+      if (/\bhangman\b/.test(n)) { const s = startGame("hangman", ctx); return done(s.text, "hangman", { game: s.game }); }
+      if (/\briddle\b/.test(n)) { const s = startGame("riddle", ctx); return done(s.text, "riddle", { game: s.game }); }
+      return done("I can play hangman, trivia, riddles, or guess-the-number. Pick one.", "play");
+    }
+    if (time) {
+      const t = new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      return done(`This device says ${t}. I have no other clock.`, "time");
+    }
+    if (date) return done(`Here it is ${new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`, "date");
+    if (thanks) return done(`You're welcome${vocative(ctx.profile)}.`, "thanks");
+    if (bye) return done(`Goodbye${vocative(ctx.profile)}. I'll be in this file.`, "bye");
+    if (name) return done(`I'll remember that${vocative(ctx.profile)}.`, "name_set");
+
+    const k = findKnowledge(n, stems);
+    if (k) return done(k.summary, "knowledge", { lastKnowledge: k.names[0] });
+
+    if (/^i am /.test(n) && n.split(" ").length < 16) {
+      return done(`You are ${n.slice(5)}. How long has that been true?`, "reflect");
+    }
+    if (sent < -0.25) return done(`I may not have a page on that${vocative(ctx.profile)}, but I can stay with it. Ask for a riddle, a fact, or some arithmetic.`, "fallback");
+    return done(`I don't have a stored answer for that${vocative(ctx.profile)}. I can search my shelf (science, history), play a game, or just keep talking.`, "fallback");
+  }
+
+  const WELCOME = "I'm Crockpot. I live in this page — no distant model, no network call. Talk like a person. Ask how I think, give me a riddle to tell, or just say hello.";
+  const KINDS = {
+    list: { label: "Checklist", hint: "Things to tick off", lines: true, ph: "Milk\nEggs\nBread" },
+    notes: { label: "Notes", hint: "A quiet page to write on" },
+    timer: { label: "Timer", hint: "A countdown you can start" },
+    tally: { label: "Tally", hint: "Count something, up or down" },
+    cards: { label: "Cards", hint: "Front and back, one pair per line", lines: true, ph: "Paris — France\nTokyo — Japan" },
+  };
+
+  function emptyProfile() { return { likes: [], dislikes: [], personality: "curious" }; }
+  function emptyEngine() { return { profile: emptyProfile(), game: null }; }
+  function welcomeConvo(profile) {
+    const t = now();
+    return { id: uid(), title: "New conversation", updatedAt: t, engine: { ...emptyEngine(), profile: { ...profile } }, messages: [{ id: uid(), role: "bot", text: WELCOME, at: t }] };
+  }
+
+  let state = load();
+  let page = location.hash === "#build" ? "build" : "chat";
+  let draft = "";
+  let thinking = false;
+  let mobile = false;
+  let cook = { kind: "list", title: "", lines: "", minutes: "5" };
+  let tick = null;
+
+  function load() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (raw && raw.conversations) return raw;
+    } catch {}
+    const p = emptyProfile();
+    const c = welcomeConvo(p);
+    return { conversations: [c], activeId: c.id, profile: p, sidebarOpen: true, apps: [], activeApp: "new" };
+  }
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }
+  function active() { return state.conversations.find((c) => c.id === state.activeId); }
+  function activeApp() { return state.apps.find((a) => a.id === state.activeApp); }
+
+  function setPage(p) {
+    page = p;
+    location.hash = p === "build" ? "build" : "";
+    render();
+  }
+
+  function send(text) {
+    const t = text.trim();
+    if (!t || thinking) return;
+    const cur = active();
+    if (!cur) return;
+    const user = { id: uid(), role: "user", text: t, at: now() };
+    const titled = cur.messages.filter((m) => m.role === "user").length === 0;
+    cur.messages.push(user);
+    if (titled) cur.title = t.length <= 28 ? t : t.slice(0, 28).trim() + "…";
+    cur.updatedAt = user.at;
+    draft = "";
+    thinking = true;
+    render();
+    const wait = Math.min(900, 220 + Math.min(t.length, 80) * 6);
+    setTimeout(() => {
+      const result = reply(t, cur.engine);
+      cur.engine = result.ctx;
+      state.profile = { ...state.profile, ...result.ctx.profile, personality: state.profile.personality };
+      cur.messages.push({ id: uid(), role: "bot", text: result.text, at: now() });
+      cur.updatedAt = now();
+      thinking = false;
+      save();
+      render();
+    }, wait);
+  }
+
+  function newChat() {
+    const c = welcomeConvo(state.profile);
+    state.conversations.unshift(c);
+    state.activeId = c.id;
+    save(); render();
+  }
+  function delChat(id) {
+    state.conversations = state.conversations.filter((c) => c.id !== id);
+    if (!state.conversations.length) state.conversations = [welcomeConvo(state.profile)];
+    if (!state.conversations.some((c) => c.id === state.activeId)) state.activeId = state.conversations[0].id;
+    save(); render();
+  }
+  function cookApp() {
+    const kind = cook.kind;
+    const lines = cook.lines.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 40);
+    const title = (cook.title.trim() || KINDS[kind].label).slice(0, 80);
+    let st;
+    if (kind === "list") st = { items: lines.map((text) => ({ id: uid(), text, done: false })) };
+    else if (kind === "notes") st = { body: lines.join("\n") };
+    else if (kind === "timer") { const m = Math.min(180, Math.max(1, Number(cook.minutes) || 5)); st = { remaining: m * 60, running: false, total: m * 60 }; }
+    else if (kind === "tally") st = { count: 0 };
+    else {
+      const cards = lines.map((line) => {
+        const p = line.split(/\s+[—–\-]\s+|\s+\|\s+/);
+        return { front: (p[0] || line).trim(), back: (p[1] || "…").trim() };
+      });
+      st = { cards: cards.length ? cards : [{ front: "Front", back: "Back" }], index: 0, flipped: false };
+    }
+    const app = { id: uid(), title, kind, spec: { lines, minutes: Number(cook.minutes) || 5 }, state: st, updatedAt: now() };
+    state.apps.unshift(app);
+    state.activeApp = app.id;
+    save(); render();
+  }
+  function patchApp(next) {
+    const i = state.apps.findIndex((a) => a.id === next.id);
+    if (i >= 0) state.apps[i] = { ...next, updatedAt: now() };
+    save(); render();
+  }
+  function delApp(id) {
+    state.apps = state.apps.filter((a) => a.id !== id);
+    state.activeApp = state.apps[0]?.id || "new";
+    save(); render();
+  }
+
+  function startTick() {
+    if (tick) clearInterval(tick);
+    tick = setInterval(() => {
+      let dirty = false;
+      for (const a of state.apps) {
+        if (a.kind === "timer" && a.state.running && a.state.remaining > 0) {
+          a.state.remaining -= 1;
+          if (a.state.remaining <= 0) a.state.running = false;
+          dirty = true;
+        }
+      }
+      if (dirty) { save(); if (page === "build") render(); }
+    }, 1000);
+  }
+
+  function esc(s) {
+    const map = { "&": "&" + "amp;", "<": "&" + "lt;", ">": "&" + "gt;", '"': "&" + "quot;", "'": "&#39;" };
+    return String(s).replace(/[&<>"']/g, (c) => map[c]);
+  }
+
+  function sidebar(listHtml, sheet) {
+    const thin = !state.sidebarOpen && !sheet;
+    return `
+      <aside class="${sheet ? "sheet-side" : "side"}${thin ? " thin" : ""}">
+        <div class="brand">
+          ${svg()}
+          ${thin ? "" : `<div class="grow"><p class="title">Crockpot</p><p class="sub"><span class="dot"></span> Local</p></div>
+          <button class="icon" data-act="collapse" aria-label="Collapse sidebar">${I.left}</button>`}
+        </div>
+        <nav class="nav">
+          <a href="#" class="${page === "chat" ? "on" : ""}" data-act="chat">${I.chat}${thin ? "" : " Chat"}</a>
+          <a href="#build" class="${page === "build" ? "on" : ""}" data-act="build">${I.app}${thin ? "" : " Build"}</a>
+        </nav>
+        ${thin ? `<div class="grow"></div><div class="foot"><button class="icon" style="width:100%" data-act="expand" aria-label="Expand sidebar">${I.left}</button></div>` : listHtml}
+      </aside>`;
+  }
+
+  function chatList() {
+    const rows = state.conversations.map((c) => `
+      <div class="row ${c.id === state.activeId ? "on" : ""}">
+        <button class="pick" data-act="sel" data-id="${c.id}"><span class="name">${esc(c.title)}</span><span class="meta">${new Date(c.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></button>
+        <button class="icon" data-act="del" data-id="${c.id}" aria-label="Delete">${I.trash}</button>
+      </div>`).join("");
+    const p = state.profile.personality;
+    return `
+      <div class="list">
+        <div style="padding:.25rem .5rem 0.75rem"><button class="outline" data-act="new">${I.plus} New conversation</button></div>
+        ${rows}
+      </div>
+      <div class="foot">
+        <p class="hint" style="text-transform:uppercase;letter-spacing:.06em;margin:0 0 .5rem">Voice</p>
+        <div class="voices">
+          ${["curious", "calm", "witty"].map((v) => `<button class="${p === v ? "on" : ""}" data-act="voice" data-v="${v}">${v}</button>`).join("")}
+        </div>
+        <button class="ghost" style="width:100%;justify-content:flex-start;margin-top:.5rem" data-act="forget">Forget what you told me</button>
+        <p class="hint" style="margin-top:1rem">This whole app is one HTML file. Chats stay in this browser.</p>
+      </div>`;
+  }
+
+  function appList() {
+    const rows = state.apps.map((a) => `
+      <div class="row ${a.id === state.activeApp ? "on" : ""}">
+        <button class="pick" data-act="selapp" data-id="${a.id}"><span class="name">${esc(a.title)}</span><span class="meta">${esc(KINDS[a.kind].label)}</span></button>
+        <button class="icon" data-act="delapp" data-id="${a.id}" aria-label="Delete">${I.trash}</button>
+      </div>`).join("");
+    return `
+      <div class="list">
+        <div style="padding:.25rem .5rem 0.75rem"><button class="outline" data-act="newapp">${I.plus} New app</button></div>
+        ${rows}
+      </div>
+      <div class="foot"><p class="hint">Small tools, cooked in this file. No deploy. No model.</p></div>`;
+  }
+
+  function chatMain() {
+    const cur = active();
+    const msgs = cur ? cur.messages : [];
+    const empty = msgs.filter((m) => m.role === "user").length === 0;
+    const game = cur && cur.engine.game && cur.engine.game.kind;
+    const chips = game ? (game === "riddle" ? ["Hint", "Pass"] : game === "hangman" ? ["Pass"] : ["Give up"]) : empty ? ["Who are you?", "How do you think?", "Tell me a riddle", "What is a black hole?"] : [];
+    return `
+      <div class="thread" id="thread">
+        <div class="wrap">
+          ${empty ? `<div><p class="hero">Crockpot</p><p class="lede">A mind that lives in this file. No cloud. No Grok. Every reply is written here.</p></div>` : ""}
+          ${msgs.map((m) => m.role === "user"
+            ? `<div class="me"><div class="bubble">${esc(m.text)}</div></div>`
+            : `<div class="bot">${svg()}<div><p class="t">Crockpot</p><p class="b">${esc(m.text)}</p></div></div>`
+          ).join("")}
+          ${thinking ? `<div class="bot">${svg()}<div><p class="t">thinking in code</p><p class="dots"><span></span><span></span><span></span></p></div></div>` : ""}
+        </div>
+      </div>
+      <div class="composer">
+        ${chips.length && !thinking ? `<div class="chips">${chips.map((c) => `<button class="chip" data-act="chip" data-t="${esc(c)}">${esc(c)}</button>`).join("")}</div>` : ""}
+        <form class="box" data-act="sendform">
+          <label class="sr" style="position:absolute;left:-9999px" for="box">Message</label>
+          <textarea id="box" rows="1" placeholder="Talk to Crockpot" ${thinking ? "disabled" : ""}>${esc(draft)}</textarea>
+          <button class="primary send" ${thinking || !draft.trim() ? "disabled" : ""} aria-label="Send">${I.send}</button>
+        </form>
+      </div>`;
+  }
+
+  function runner(app) {
+    if (app.kind === "list") {
+      const items = app.state.items || [];
+      const left = items.filter((i) => !i.done).length;
+      return `<div class="wrap">
+        <p class="hint">${left} open</p>
+        ${items.map((i) => `<div class="row"><button class="check" data-act="toggle" data-id="${i.id}"><span class="boxy ${i.done ? "on" : ""}">${i.done ? "✓" : ""}</span><span class="${i.done ? "done" : ""}">${esc(i.text)}</span></button><button class="icon" data-act="rmitem" data-id="${i.id}">${I.trash}</button></div>`).join("")}
+        <form data-act="additem" style="display:flex;gap:.5rem;margin-top:1rem"><input class="inp" name="item" placeholder="Add an item"><button class="primary send" type="submit">${I.plus}</button></form>
+      </div>`;
+    }
+    if (app.kind === "notes") {
+      return `<div class="wrap" style="height:100%"><textarea class="area" style="min-height:60vh;background:transparent" data-act="notes" placeholder="Write here. It stays in this file.">${esc(app.state.body || "")}</textarea></div>`;
+    }
+    if (app.kind === "timer") {
+      const r = Math.max(0, app.state.remaining || 0);
+      const m = String(Math.floor(r / 60)).padStart(2, "0");
+      const s = String(r % 60).padStart(2, "0");
+      const pct = app.state.total ? (r / app.state.total) * 100 : 0;
+      return `<div class="wrap" style="align-items:center;text-align:center">
+        <p class="clock">${m}:${s}</p>
+        <div class="bar" style="max-width:20rem"><i style="width:${pct}%"></i></div>
+        <div style="display:flex;gap:.5rem;margin-top:1.5rem">
+          <button class="primary" data-act="togtimer">${app.state.running ? "Pause" : r === 0 ? "Start again" : "Start"}</button>
+          <button class="outline" style="width:auto" data-act="resettimer">Reset</button>
+        </div>
+      </div>`;
+    }
+    if (app.kind === "tally") {
+      return `<div class="wrap" style="align-items:center;text-align:center">
+        <p class="clock">${app.state.count || 0}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;width:min(20rem,100%)">
+          <button class="outline" data-act="minus">Minus</button>
+          <button class="primary" data-act="plus">Plus</button>
+        </div>
+        <button class="ghost" data-act="zerotally">Reset</button>
+      </div>`;
+    }
+    const cards = app.state.cards || [];
+    const i = Math.min(app.state.index || 0, Math.max(0, cards.length - 1));
+    const c = cards[i];
+    if (!c) return `<p class="wrap">No cards.</p>`;
+    return `<div class="wrap">
+      <p class="hint">${i + 1} / ${cards.length}</p>
+      <button class="card" data-act="flip">${esc(app.state.flipped ? c.back : c.front)}</button>
+      <p class="hint" style="text-align:center">${app.state.flipped ? "Back" : "Front"} — tap to flip</p>
+      <div style="display:flex;justify-content:space-between;margin-top:1rem">
+        <button class="outline" style="width:auto" data-act="prev" ${i <= 0 ? "disabled" : ""}>Prev</button>
+        <button class="outline" style="width:auto" data-act="next" ${i >= cards.length - 1 ? "disabled" : ""}>Next</button>
+      </div>
+    </div>`;
+  }
+
+  function cookForm() {
+    const meta = KINDS[cook.kind];
+    return `<form class="wrap" data-act="cook">
+      <div><p class="hero">Build an app</p><p class="lede">A small tool, cooked in this file. No deploy. No model. Pick a kind and give it a name.</p></div>
+      <div><p class="hint" style="text-transform:uppercase;letter-spacing:.06em">Kind</p>
+        <div class="kinds">${Object.entries(KINDS).map(([k, v]) => `<button type="button" class="kind ${cook.kind === k ? "on" : ""}" data-act="kind" data-k="${k}"><b>${v.label}</b><span>${v.hint}</span></button>`).join("")}</div>
+      </div>
+      <label class="field"><em>Name</em><input class="inp" name="title" placeholder="${esc(meta.label)}" value="${esc(cook.title)}"></label>
+      ${cook.kind === "timer" ? `<label class="field"><em>Minutes</em><input class="inp" name="minutes" type="number" min="1" max="180" value="${esc(cook.minutes)}"></label>` : ""}
+      ${meta.lines ? `<label class="field"><em>${cook.kind === "cards" ? "Cards" : "Starting items"}</em><textarea class="area" name="lines" placeholder="${esc(meta.ph || "")}">${esc(cook.lines)}</textarea></label>` : ""}
+      <button class="primary" type="submit" style="width:100%;margin-top:1.5rem">Cook it</button>
+    </form>`;
+  }
+
+  function header(title, sub, extra = "") {
+    return `<header class="top">
+      <button class="icon only-m" data-act="menu" aria-label="Open menu">${I.menu}</button>
+      ${!state.sidebarOpen ? `<button class="icon hide-m" data-act="expand" aria-label="Expand sidebar">${I.left}</button>` : ""}
+      <div class="grow">
+        <p class="title" style="font-size:1.1rem">${esc(title)}</p>
+        ${sub ? `<p class="sub">${esc(sub)}</p>` : ""}
+      </div>
+      ${extra}
+    </header>`;
+  }
+
+  function render() {
+    const app = document.getElementById("app");
+    const thinCss = `<style>@media(min-width:768px){.hide-m{display:inline-flex !important}} @media(max-width:767px){.hide-m{display:none !important} header.top .icon[data-act="menu"]{display:inline-flex} } @media(min-width:768px){ header.top .icon[data-act="menu"]{display:none} }</style>`;
+    if (page === "chat") {
+      const cur = active();
+      app.innerHTML = thinCss + sidebar(chatList()) + `<div class="main">${header("Crockpot", "A mind that lives in the code", `<button class="icon" data-act="new" aria-label="New conversation">${I.plus}</button>`)}${chatMain()}</div>
+        <div class="sheet ${mobile ? "on" : ""}" data-act="closemenu" ${mobile ? "" : 'aria-hidden="true"'}><div class="panel">${sidebar(chatList(), true)}</div></div>`;
+      const thread = $("#thread");
+      if (thread) thread.scrollTop = thread.scrollHeight;
+      const box = $("#box");
+      if (box) {
+        box.value = draft;
+        box.style.height = "auto";
+        box.style.height = Math.min(box.scrollHeight, 160) + "px";
+        box.addEventListener("input", (e) => { draft = e.target.value; e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px"; const b = e.target.parentElement.querySelector(".send"); if (b) b.disabled = thinking || !draft.trim(); });
+        box.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(draft); } });
+      }
+    } else {
+      const a = activeApp();
+      app.innerHTML = thinCss + sidebar(appList()) + `<div class="main">${header(a ? a.title : "Build", a ? KINDS[a.kind].hint : "Small tools, cooked in this file")}
+        <div class="thread">${a ? runner(a) : cookForm()}</div></div>
+        <div class="sheet ${mobile ? "on" : ""}" data-act="closemenu" ${mobile ? "" : 'aria-hidden="true"'}><div class="panel">${sidebar(appList(), true)}</div></div>`;
+    }
+  }
+
+  document.getElementById("app").addEventListener("click", (e) => {
+    const t = e.target.closest("[data-act]");
+    if (!t) return;
+    const act = t.dataset.act;
+    if (act === "closemenu" && e.target === t) { mobile = false; render(); return; }
+    if (act === "menu") { mobile = true; render(); return; }
+    if (act === "collapse") { state.sidebarOpen = false; save(); render(); return; }
+    if (act === "expand") { state.sidebarOpen = true; mobile = false; save(); render(); return; }
+    if (act === "chat") { e.preventDefault(); mobile = false; setPage("chat"); return; }
+    if (act === "build") { e.preventDefault(); mobile = false; setPage("build"); return; }
+    if (act === "new") { newChat(); return; }
+    if (act === "sel") { state.activeId = t.dataset.id; save(); render(); return; }
+    if (act === "del") { delChat(t.dataset.id); return; }
+    if (act === "voice") { state.profile.personality = t.dataset.v; const cur = active(); if (cur) cur.engine.profile.personality = t.dataset.v; save(); render(); return; }
+    if (act === "forget") { state.profile = { ...emptyProfile(), personality: state.profile.personality }; const cur = active(); if (cur) cur.engine.profile = { ...state.profile }; save(); render(); return; }
+    if (act === "chip") { send(t.dataset.t); return; }
+    if (act === "newapp") { state.activeApp = "new"; save(); render(); return; }
+    if (act === "selapp") { state.activeApp = t.dataset.id; save(); render(); return; }
+    if (act === "delapp") { delApp(t.dataset.id); return; }
+    if (act === "kind") { cook.kind = t.dataset.k; render(); return; }
+    const app = activeApp();
+    if (app && act === "toggle") { app.state.items = app.state.items.map((i) => i.id === t.dataset.id ? { ...i, done: !i.done } : i); patchApp(app); }
+    if (app && act === "rmitem") { app.state.items = app.state.items.filter((i) => i.id !== t.dataset.id); patchApp(app); }
+    if (app && act === "togtimer") {
+      if (app.state.remaining <= 0) app.state.remaining = app.state.total || 300;
+      app.state.running = !app.state.running; patchApp(app);
+    }
+    if (app && act === "resettimer") { app.state.remaining = app.state.total || 300; app.state.running = false; patchApp(app); }
+    if (app && act === "minus") { app.state.count = (app.state.count || 0) - 1; patchApp(app); }
+    if (app && act === "plus") { app.state.count = (app.state.count || 0) + 1; patchApp(app); }
+    if (app && act === "zerotally") { app.state.count = 0; patchApp(app); }
+    if (app && act === "flip") { app.state.flipped = !app.state.flipped; patchApp(app); }
+    if (app && act === "prev") { app.state.index = Math.max(0, (app.state.index || 0) - 1); app.state.flipped = false; patchApp(app); }
+    if (app && act === "next") { app.state.index = (app.state.index || 0) + 1; app.state.flipped = false; patchApp(app); }
+  });
+
+  document.getElementById("app").addEventListener("submit", (e) => {
+    const form = e.target.closest("[data-act]");
+    if (!form) return;
+    e.preventDefault();
+    if (form.dataset.act === "sendform") send(draft);
+    if (form.dataset.act === "cook") {
+      const fd = new FormData(form);
+      cook.title = String(fd.get("title") || "");
+      cook.lines = String(fd.get("lines") || "");
+      cook.minutes = String(fd.get("minutes") || cook.minutes);
+      cookApp();
+    }
+    if (form.dataset.act === "additem") {
+      const app = activeApp();
+      const input = form.querySelector("input");
+      const text = (input.value || "").trim();
+      if (app && text) { app.state.items.push({ id: uid(), text, done: false }); input.value = ""; patchApp(app); }
+    }
+  });
+  document.getElementById("app").addEventListener("input", (e) => {
+    if (e.target.dataset.act === "notes") {
+      const app = activeApp();
+      if (app) { app.state.body = e.target.value; save(); }
+    }
+  });
+
+  addEventListener("hashchange", () => {
+    const next = location.hash === "#build" ? "build" : "chat";
+    if (next !== page) { page = next; render(); }
+  });
+
+  startTick();
+  render();
+})();
+</script>
 </body>
 </html>
